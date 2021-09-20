@@ -9,10 +9,10 @@ from hwt.interfaces.structIntf import StructIntf
 from hwt.interfaces.utils import addClkRstn, propagateClkRstn
 from hwt.synthesizer.param import Param
 from hwt.synthesizer.unit import Unit
-from hwtAxiPerTester.address_generator import AddressGenerator
-from hwtAxiPerTester.rw_pattern_generator import RWPatternGenerator
-from hwtAxiPerTester.statistic_collector import StatisticCollector
-from hwtAxiPerTester.time_duration_storage import TimeDurationStorage
+from hwtAxiPerfTester.address_generator import AddressGenerator
+from hwtAxiPerfTester.rw_pattern_generator import RWPatternGenerator
+from hwtAxiPerfTester.statistic_collector import StatisticCollector
+from hwtAxiPerfTester.time_duration_storage import TimeDurationStorage
 from hwtLib.amba.axi4 import Axi4, Axi4_addr
 from hwtLib.amba.axi4Lite import Axi4Lite
 from hwtLib.amba.axiLite_comp.endpoint import AxiLiteEndpoint
@@ -55,7 +55,9 @@ class AxiPerfTester(Unit):
         cfg.ADDR_WIDTH = self.CFG_ADDR_WIDTH
         cfg.DATA_WIDTH = self.CFG_DATA_WIDTH
 
-        self.axi = self.AXI_CLS()._m()
+        with self._paramsShared():
+            self.axi = self.AXI_CLS()._m()
+
 
     def _axi_addr_defaults(self, a: Axi4_addr):
         a.burst(BURST_INCR)

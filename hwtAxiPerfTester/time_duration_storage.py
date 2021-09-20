@@ -59,7 +59,6 @@ class TimeDurationStorage(Unit):
         trans_stats = self.get_trans_stats = Handshaked()._m()
         trans_stats.DATA_WIDTH = self.TIME_WIDTH
 
-
     def _impl(self) -> None:
         push = self.push
         time = self.time

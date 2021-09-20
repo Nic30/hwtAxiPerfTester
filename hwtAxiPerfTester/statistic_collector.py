@@ -8,7 +8,7 @@ from hwt.serializer.mode import serializeParamsUniq
 from hwt.synthesizer.hObjList import HObjList
 from hwt.synthesizer.param import Param
 from hwt.synthesizer.unit import Unit
-from hwtAxiPerTester.histogram import HistogramDynamic
+from hwtAxiPerfTester.histogram import HistogramDynamic
 from hwtLib.mem.ram import RamSingleClock
 
 

@@ -63,10 +63,14 @@ class StatisticCollector(Unit):
              self._reg(n, Bits(self.COUNTER_WIDTH))
             for n in  ["min_val", "max_val", "sum_val", "input_cnt", "last_time",  # "reorder_cnt"
                        ]]
+        regs = [min_val, max_val, sum_val, input_cnt, last_time]
 
         stats = self.trans_stats
         stats.rd(1)
         histogram.data_in(stats, exclude=[stats.rd])
+        for c_io, c in zip(self.cntr_io, regs):
+            c_io.din(c),
+
         If(stats.vld & self.en,
            min_val(hMin(min_val, stats.data)),
            max_val(hMin(max_val, stats.data)),
@@ -77,15 +81,13 @@ class StatisticCollector(Unit):
            last_values.port[0].en(1),
            last_values.port[0].we(1),
            last_values.port[0].din(stats.data),
+           self.last_values.dout(None),
         ).Else(
             *(
-                (
-                    c_io.din(c),
-                    If(c_io.dout.vld,
-                       c(c_io.dout.data)
-                    ),
+                If(c_io.dout.vld,
+                   c(c_io.dout.data)
                 )
-                for c_io, c in zip(self.cntr_io, [min_val, max_val, sum_val, input_cnt, last_time])
+                for c_io, c in zip(self.cntr_io, regs)
             ),
             last_values.port[0](self.last_values)
         )

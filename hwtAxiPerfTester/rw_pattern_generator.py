@@ -89,6 +89,8 @@ class RWPatternGenerator(Unit):
             If(self.en.dout.vld & ~self.en.dout.data,
                 # premature exit
                 en(0),
+                r_hs.r.addr.vld(0),
+                w_hs.r.addr.vld(0),
             ).Else(
                 # regular counting while credit available
                 Switch(self.mode)\
@@ -114,11 +116,22 @@ class RWPatternGenerator(Unit):
                        en(credit_w != 0),
                        credit_w(credit_w - 1),
                     ),
+                ).Default(
+                    r_hs.r.addr.vld(0),
+                    w_hs.r.addr.vld(0),
                 )
-            )
+            ),
+            r_pattern.port[0].din(None),
+            w_pattern.port[0].din(None),
+            r_pattern.port[0].we(0),
+            w_pattern.port[0].we(0),
+            self.r_pattern.dout(None),
+            self.w_pattern.dout(None),
         ).Else(
             r_hs.r.addr.vld(0),
             w_hs.r.addr.vld(0),
+            r_hs.ram.dout(None),
+            w_hs.ram.dout(None),
             r_pattern.port[0](self.r_pattern),
             w_pattern.port[0](self.w_pattern),
             If(self.en.dout.vld,

@@ -14,6 +14,7 @@ from hwtLib.handshaked.ramAsHs import RamAsHs
 from hwtLib.handshaked.reg import HandshakedReg
 from hwtLib.handshaked.streamNode import StreamNode
 from hwtLib.mem.ram import RamSingleClock
+from hwt.synthesizer.interfaceLevel.interfaceUtils.utils import walkPhysInterfaces
 
 
 class TimeDurationStorage(Unit):
@@ -100,14 +101,20 @@ class TimeDurationStorage(Unit):
         def dissable_inorder_part():
             return (
                 f.dataIn.vld(0),
+                f.dataIn.data(None),
                 f.dataOut.rd(1),
             )
 
         def dissable_ooo_part():
             return [
-                *(i.vld(0)
+                *((_i(0)
+                    if _i is i.vld else
+                    _i(None)
+                    for _i in walkPhysInterfaces(i) if _i._direction == i.vld._direction
+                    )
                   for i in [hs_ram_w.w,
                              hs_ram_r.r.addr,
+                             ooof.write_confirm,
                              ooof.read_confirm,
                              push_tmp.dataIn]),
                 *(i.rd(1)

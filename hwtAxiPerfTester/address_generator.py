@@ -18,7 +18,7 @@ from hwtLib.amba.axi4 import Axi4
 from hwtLib.handshaked.streamNode import StreamNode
 from hwtLib.logic.crcComb import CrcComb
 from hwtLib.logic.crcPoly import CRC_8, CRC_32
-
+from hwt.hdl.constants import READ, WRITE
 
 
 class AddressGenerator(Unit):
@@ -67,16 +67,18 @@ class AddressGenerator(Unit):
     def _mkFieldInterface(self, structIntf: StructIntf, field: HStructField):
         return BusEndpoint._mkFieldInterface(self, structIntf, field)
 
-    def propagate_addr_space(self, data: Dict[str, Union[RtlSyncSignal, Interface]]):
+    def propagate_addr_space(self, data: Dict[str, Union[RtlSyncSignal, Interface]], read_or_write):
         res = []
         for io in self.addr_space_io._interfaces:
             reg = data[io._name]
-            res.extend((
-                If(io.dout.vld,
+            if read_or_write == READ:
+                o = io.din(reg)
+            else:
+                o = If(io.dout.vld,
                    reg(io.dout.data),
-                ),
-                io.din(reg),
-            ))
+                )
+
+            res.append(o)
 
         return res
 
@@ -109,6 +111,8 @@ class AddressGenerator(Unit):
         req_out = self.req_out
         sync = StreamNode([self.en], [req_out])
         sync.sync()
+
+        self.propagate_addr_space(locals(), READ)
         If(sync.ack(),
             If(addr_mode._eq(self.MODE.MODULO),
                addr(addr + addr_step),
@@ -121,7 +125,7 @@ class AddressGenerator(Unit):
                trans_len(trans_len_crc8.dataOut),
             ),
         ).Else(
-            *self.propagate_addr_space(locals())
+            *self.propagate_addr_space(locals(), WRITE)
         )
 
         req_out.data.addr((addr & addr_mask) + addr_offset)

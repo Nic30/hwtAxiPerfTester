@@ -22,10 +22,8 @@ from hwtLib.handshaked.streamNode import StreamNode
 from hwtLib.types.ctypes import uint32_t
 from pyMathBitPrecise.bit_utils import mask
 from hwt.synthesizer.rtlLevel.rtlSignal import RtlSignal
-from hwt.synthesizer.interfaceLevel.emptyUnit import EmptyUnit
-from hwtLib.cesnet.mi32.intf import Mi32
-from hwtLib.cesnet.mi32.endpoint import Mi32Endpoint
 from hwt.synthesizer.hObjList import HObjList
+from hwt.hdl.types.hdlType import HdlType
 
 
 class AxiPerfTester(Unit):
@@ -62,6 +60,7 @@ class AxiPerfTester(Unit):
         a.burst(BURST_INCR)
         a.prot(PROT_DEFAULT)
         a.size(BYTES_IN_TRANS(self.DATA_WIDTH // 8))
+
         a.lock(LOCK_DEFAULT)
         a.cache(CACHE_DEFAULT)
         a.qos(QOS_DEFAULT)
@@ -174,6 +173,16 @@ class AxiPerfTester(Unit):
             cfg_io.stats.last_time,
         ]), fit=True)
 
+    def build_addr_decoder(self, ADDR_SPACE: HdlType):
+        cfg_decoder = self.CFG_BUS[1](ADDR_SPACE)
+        cfg_decoder.ADDR_WIDTH = self.CFG_ADDR_WIDTH
+        cfg_decoder.DATA_WIDTH = self.CFG_DATA_WIDTH
+
+        self.cfg_decoder = cfg_decoder
+        cfg_decoder.bus(self.cfg)
+        cfg = cfg_decoder.decoded
+        return cfg
+
     def _impl(self) -> None:
         addr_gen_config_t = HStruct(
             (uint32_t, "credit"),
@@ -223,16 +232,8 @@ class AxiPerfTester(Unit):
             (channel_config_t, "r"),
             (channel_config_t, "w"),
         )
-        #print(ADDR_SPACE)
-
-        cfg_decoder = self.CFG_BUS[1](ADDR_SPACE)
-        cfg_decoder.ADDR_WIDTH = self.CFG_ADDR_WIDTH
-        cfg_decoder.DATA_WIDTH = self.CFG_DATA_WIDTH
-
-        self.cfg_decoder = cfg_decoder
-        cfg_decoder.bus(self.cfg)
-        cfg = cfg_decoder.decoded
-
+        # print(ADDR_SPACE)
+        cfg = self.build_addr_decoder(ADDR_SPACE)
         cfg.id.din(int.from_bytes("TEST".encode(), "big"))
         cntrl = self._reg("cntrl", HStruct(
             (BIT, "time_en"),

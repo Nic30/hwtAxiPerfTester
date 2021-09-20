@@ -58,7 +58,6 @@ class AxiPerfTester(Unit):
         with self._paramsShared():
             self.axi = self.AXI_CLS()._m()
 
-
     def _axi_addr_defaults(self, a: Axi4_addr):
         a.burst(BURST_INCR)
         a.prot(PROT_DEFAULT)
@@ -158,7 +157,7 @@ class AxiPerfTester(Unit):
             r.ready(complete.rd)
             complete.data(r.id)
 
-        addr_gen.addr_space_io(cfg_io.addr_gen_config, fit=True)
+        addr_gen.addr_space_io(cfg_io.addr_gen_config, exclude=[cfg_io.addr_gen_config.credit, ], fit=True)
 
         stats.en(stats_en)
         stats.time(time)
@@ -177,6 +176,7 @@ class AxiPerfTester(Unit):
 
     def _impl(self) -> None:
         addr_gen_config_t = HStruct(
+            (uint32_t, "credit"),
             (uint32_t, "addr"),
             (uint32_t, "addr_step"),
             (uint32_t, "addr_mask"),
@@ -187,6 +187,7 @@ class AxiPerfTester(Unit):
             (uint32_t, "trans_len_step"),
             (uint32_t, "trans_len_mask"),
             (uint32_t, "trans_len_mode"),
+            name="addr_gen_config_t",
         )
         stat_data_t = HStruct(
             (uint32_t[self.HISTOGRAM_ITEMS - 1], "histogram_keys"),
@@ -197,12 +198,14 @@ class AxiPerfTester(Unit):
             (uint32_t, "sum_val"),
             (uint32_t, "input_cnt"),
             (uint32_t, "last_time"),
+            name="stat_data_t",
         )
         channel_config_t = HStruct(
             (uint32_t[self.RW_PATTERN_ITEMS], "pattern"),
             (uint32_t, "dispatched_cntr"),
             (addr_gen_config_t, "addr_gen_config"),
             (stat_data_t, "stats"),
+            name="channel_config_t"
         )
         controll_t = HStruct(
             (BIT, "time_en"),
@@ -211,6 +214,7 @@ class AxiPerfTester(Unit):
             (BIT, "r_ordering_mode"),
             (BIT, "w_ordering_mode"),
             (Bits(32 - 5), "reserved"),
+            name="controll_t"
         )
         ADDR_SPACE = HStruct(
             (uint32_t, "id"),  # "TEST"
@@ -219,6 +223,7 @@ class AxiPerfTester(Unit):
             (channel_config_t, "r"),
             (channel_config_t, "w"),
         )
+        #print(ADDR_SPACE)
 
         cfg_decoder = self.CFG_BUS[1](ADDR_SPACE)
         cfg_decoder.ADDR_WIDTH = self.CFG_ADDR_WIDTH
@@ -256,7 +261,9 @@ class AxiPerfTester(Unit):
         cfg_controll_din = cfg.controll.din._reinterpret_cast(controll_t)
         cfg_controll_dout = cfg.controll.dout.data._reinterpret_cast(controll_t)
         self.add_channel("r", self.axi.ar, cfg.r, time, cntrl.time_en, rw_pat.r_en, cntrl.r_ordering_mode)
+        rw_pat.r_credit(cfg.r.addr_gen_config.credit)
         self.add_channel("w", self.axi.aw, cfg.w, time, cntrl.time_en, rw_pat.w_en, cntrl.w_ordering_mode)
+        rw_pat.w_credit(cfg.w.addr_gen_config.credit)
 
         If(cfg.controll.dout.vld,
            cntrl.time_en(cfg_controll_dout.time_en),

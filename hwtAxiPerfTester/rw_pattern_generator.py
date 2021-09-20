@@ -35,6 +35,11 @@ class RWPatternGenerator(Unit):
             p.ADDR_WIDTH = log2ceil(self.ITEMS - 1)
             p.DATA_WIDTH = 1
 
+        self.r_credit = RegCntrl()
+        self.w_credit = RegCntrl()
+        for c in [self.r_credit, self.w_credit]:
+            c.DATA_WIDTH = self.COUNTER_WIDTH
+
         self.r_en = HandshakeSync()._m()
         self.w_en = HandshakeSync()._m()
 
@@ -68,6 +73,8 @@ class RWPatternGenerator(Unit):
         cntr_t = Bits(self.COUNTER_WIDTH)
         credit_r = self._reg("credit_r", cntr_t)
         credit_w = self._reg("credit_w", cntr_t)
+        self.r_credit.din(credit_r)
+        self.w_credit.din(credit_w)
 
         r_pattern, r_hs, r_ram_conn = self._construct_pattern_ram(credit_r, "r", en, self.r_en)
         w_pattern, w_hs, w_ram_conn = self._construct_pattern_ram(credit_w, "w", en, self.w_en)
@@ -116,7 +123,13 @@ class RWPatternGenerator(Unit):
             w_pattern.port[0](self.w_pattern),
             If(self.en.dout.vld,
                en(self.en.dout.data)
-            )
+            ),
+            If(self.r_credit.dout.vld,
+               credit_r(self.r_credit.dout.data)
+            ),
+            If(self.w_credit.dout.vld,
+               credit_w(self.w_credit.dout.data)
+            ),
         )
 
         propagateClkRstn(self)

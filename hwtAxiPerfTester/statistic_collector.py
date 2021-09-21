@@ -3,7 +3,7 @@ from hwt.hdl.types.bits import Bits
 from hwt.interfaces.std import Signal, BramPort_withoutClk, \
     Handshaked, RegCntrl
 from hwt.interfaces.utils import addClkRstn, propagateClkRstn
-from hwt.math import log2ceil, hMin
+from hwt.math import log2ceil, hMin, hMax
 from hwt.serializer.mode import serializeParamsUniq
 from hwt.synthesizer.hObjList import HObjList
 from hwt.synthesizer.param import Param
@@ -73,7 +73,7 @@ class StatisticCollector(Unit):
 
         If(stats.vld & self.en,
            min_val(hMin(min_val, stats.data)),
-           max_val(hMin(max_val, stats.data)),
+           max_val(hMax(max_val, stats.data)),
            sum_val(sum_val + stats.data),
            input_cnt(input_cnt + 1),
            last_time(self.time),

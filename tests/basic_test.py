@@ -80,7 +80,7 @@ class AxiPerfTesterTC(SimTestCase):
         u: AxiPerfTester = self.u
         tc = self
         self.setUpQueues()
-        axi_randomize_per_channel(self, u.cfg)
+        #axi_randomize_per_channel(self, u.cfg)
         axi_randomize_per_channel(self, u.axi)
 
         def time_sync():

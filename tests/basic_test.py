@@ -17,6 +17,7 @@ from hwtLib.amba.axi_comp.sim.ram import AxiSimRam
 from hwtSimApi.constants import CLK_PERIOD
 from hwtSimApi.triggers import Timer, StopSimumulation
 from tests.axi_perf_tester_ctl_sim import AxiPerfTesterCtlSim
+from hwtLib.amba.axiLite_comp.sim.utils import axi_randomize_per_channel
 
 
 def run_AxiPerfTesterCtlSim(tc, job, data):
@@ -79,6 +80,8 @@ class AxiPerfTesterTC(SimTestCase):
         u: AxiPerfTester = self.u
         tc = self
         self.setUpQueues()
+        axi_randomize_per_channel(self, u.cfg)
+        axi_randomize_per_channel(self, u.axi)
 
         def time_sync():
             while True:
@@ -130,17 +133,22 @@ class AxiPerfTesterTC(SimTestCase):
         self.assertEqual(len(reports), 1)
         rep: AxiPerfTesterTestReport = reports[0]
         self.assertGreater(rep.time, 10)
-        for ch in rep.channel:
-            self.assertEqual(ch.credit, 0)
-            self.assertEqual(ch.dispatched_cntr, 10)
-            self.assertEqual(sum(ch.histogram_counters), 10)
-            self.assertEqual(sum(1 if c > 0 else 0 for c in ch.last_values), min(u.LAST_VALUES_ITEMS, 10))
-            self.assertGreater(ch.min_val, 0)
-            self.assertGreaterEqual(ch.max_val, ch.min_val)
-            self.assertGreater(ch.sum_val, 10)
-            self.assertEqual(ch.input_cnt, 10)
-            self.assertGreater(ch.last_time, 10)
-            self.assertLessEqual(ch.last_time, rep.time)
+
+        #import json
+        #with open("example_data.json", "w") as f:
+        #    json.dump(rep.to_json(), f, indent=2, separators=(',', ': '))
+
+        for ch_i, ch in enumerate(rep.channel):
+            self.assertEqual(ch.credit, 0, ch_i)
+            self.assertEqual(ch.dispatched_cntr, 10, ch_i)
+            self.assertEqual(sum(ch.histogram_counters), 10, ch_i)
+            self.assertEqual(sum(1 if c > 0 else 0 for c in ch.last_values), min(u.LAST_VALUES_ITEMS, 10), ch_i)
+            self.assertGreater(ch.min_val, 0, ch_i)
+            self.assertGreaterEqual(ch.max_val, ch.min_val, ch_i)
+            self.assertGreater(ch.sum_val, 10, ch_i)
+            self.assertEqual(ch.input_cnt, 10, ch_i)
+            self.assertGreater(ch.last_time, 10, ch_i)
+            self.assertLessEqual(ch.last_time, rep.time, ch_i)
 
 
 if __name__ == "__main__":

@@ -131,7 +131,7 @@ class TimeDurationStorage(Unit):
 
             StreamNode([f.dataOut, complete],
                        [self.get_trans_stats, ]).sync(),
-            self.get_trans_stats.data(f.dataOut.data - self.time),
+            self.get_trans_stats.data(self.time - f.dataOut.data),
             *dissable_ooo_part(),
         ).Case(self.MODE.OUT_OF_ORDER,
             # # allocates id for transaction
@@ -161,7 +161,7 @@ class TimeDurationStorage(Unit):
             # from ooo fifo ram to out
             StreamNode([hs_ram_r.r.data],
                        [self.get_trans_stats, ]).sync(),
-            self.get_trans_stats.data(hs_ram_r.r.data.data - self.time),
+            self.get_trans_stats.data(self.time - hs_ram_r.r.data.data),
             *dissable_inorder_part(),
         ).Default(
             *dissable_inorder_part(),

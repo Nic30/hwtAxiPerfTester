@@ -161,16 +161,17 @@ class AxiPerfTesterCtl():
 
         rep.histogram_keys = histogram_keys
         offset += self.stat_data_offset + (self.histogram_items - 1) * 4
+
         rep.histogram_counters: List[int] = [
             read32(offset + i * 4) for i in range(self.histogram_items)
         ]
-
         offset += self.histogram_items * 4
+
         rep.last_values: List[int] = [
             read32(offset + i * 4) for i in range(self.last_values_items)
         ]
-
         offset += self.last_values_items * 4
+
         rep.min_val, rep.max_val, rep.sum_val, rep.input_cnt, rep.last_time = [
             read32(offset + i * 4) for i in range(5)
         ]

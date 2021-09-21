@@ -13,6 +13,8 @@ from hwt.synthesizer.param import Param
 from hwt.synthesizer.unit import Unit
 from hwtAxiPerfTester.histogram import HistogramDynamic
 from hwtLib.mem.ram import RamSingleClock
+from hwtLib.handshaked.builder import HsBuilder
+from hwt.code_utils import rename_signal
 
 
 @serializeParamsUniq
@@ -68,13 +70,13 @@ class StatisticCollector(Unit):
                        ]]
         regs = [min_val, max_val, sum_val, input_cnt, last_time]
 
-        stats = self.trans_stats
+        stats = HsBuilder(self, self.trans_stats).buff(1, (1, 2)).end
         stats.rd(1)
         histogram.data_in(stats, exclude=[stats.rd])
         for c_io, c in zip(self.cntr_io, regs):
-            c_io.din(c),
+            c_io.din(c)
 
-        If(stats.vld & self.en,
+        If(rename_signal(self, stats.vld & self.en, "trans_accept"),
            min_val(hMin(min_val, stats.data)),
            max_val(hMax(max_val, stats.data)),
            sum_val(sum_val + stats.data),

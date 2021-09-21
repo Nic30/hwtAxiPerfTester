@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 from hwt.code import Switch, If
 from hwt.hdl.types.bits import Bits
 from hwt.interfaces.std import RegCntrl, BramPort_withoutClk, HandshakeSync, \

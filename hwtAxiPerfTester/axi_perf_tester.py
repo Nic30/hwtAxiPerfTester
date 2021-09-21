@@ -1,3 +1,7 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+
 from typing import Type, Tuple
 
 from hwt.code import If

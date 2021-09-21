@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 from hwt.code import Switch
 from hwt.hdl.constants import WRITE, READ
 from hwt.hdl.types.bits import Bits

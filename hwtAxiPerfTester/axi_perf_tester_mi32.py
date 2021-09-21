@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 from typing import Tuple, Type
 
 from hwt.hdl.types.hdlType import HdlType

@@ -1,4 +1,3 @@
-
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
@@ -18,7 +17,6 @@ from hwtLib.amba.axi_comp.sim.ram import AxiSimRam
 from hwtSimApi.constants import CLK_PERIOD
 from hwtSimApi.triggers import Timer, StopSimumulation
 from tests.axi_perf_tester_ctl_devmem import AxiPerfTesterCtlSim
-
 
 
 def run_AxiPerfTesterCtlSim(tc, job, data):

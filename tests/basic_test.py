@@ -16,7 +16,7 @@ from hwtAxiPerfTester.time_duration_storage import TimeDurationStorage
 from hwtLib.amba.axi_comp.sim.ram import AxiSimRam
 from hwtSimApi.constants import CLK_PERIOD
 from hwtSimApi.triggers import Timer, StopSimumulation
-from tests.axi_perf_tester_ctl_devmem import AxiPerfTesterCtlSim
+from tests.axi_perf_tester_ctl_sim import AxiPerfTesterCtlSim
 
 
 def run_AxiPerfTesterCtlSim(tc, job, data):

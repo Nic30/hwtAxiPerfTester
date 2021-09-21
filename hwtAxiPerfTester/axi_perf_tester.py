@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-
 from typing import Type, Tuple
 
 from hwt.code import If
@@ -187,7 +186,7 @@ class AxiPerfTester(Unit):
         cfg = cfg_decoder.decoded
         return cfg
 
-    def _impl(self) -> None:
+    def construct_addr_space_type(self):
         addr_gen_config_t = HStruct(
             (uint32_t, "credit"),
             (uint32_t, "addr"),
@@ -236,6 +235,10 @@ class AxiPerfTester(Unit):
             (channel_config_t, "r"),
             (channel_config_t, "w"),
         )
+        return  ADDR_SPACE, controll_t
+
+    def _impl(self) -> None:
+        ADDR_SPACE, controll_t = self.construct_addr_space_type()
         # print(ADDR_SPACE)
         cfg = self.build_addr_decoder(ADDR_SPACE)
         cfg.id.din(int.from_bytes("TEST".encode(), "big"))

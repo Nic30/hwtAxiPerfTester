@@ -213,10 +213,10 @@ class AxiPerfTesterCtl():
         return int.from_bytes(self.read(addr, 4), 'little')
 
     def read(self, addr: int, size: int) -> bytes:
-        raise NotImplementedError("Overide in your implementation")
+        raise NotImplementedError("Override in your implementation")
 
     def write32(self, addr:int, data: int):
         return self.write(addr, 4, data)
 
     def write(self, addr:int, size:int, data:int):
-        raise NotImplementedError("Overide in your implementation")
+        raise NotImplementedError("Override in your implementation")

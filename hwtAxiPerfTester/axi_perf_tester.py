@@ -240,7 +240,12 @@ class AxiPerfTester(Unit):
             (BIT, "rw_mode"),
             (BIT, "r_ordering_mode"),
             (BIT, "w_ordering_mode"),
-        ),)
+        ), def_val={
+            "time_en":0,
+            "rw_mode": RWPatternGenerator.MODE.SYNC,
+            "r_ordering_mode": TimeDurationStorage.MODE.IN_ORDER,
+            "w_ordering_mode": TimeDurationStorage.MODE.IN_ORDER,
+        })
 
         time = self._reg("time", Bits(self.COUNTER_WIDTH))
 
@@ -284,5 +289,10 @@ class AxiPerfTester(Unit):
 if __name__ == "__main__":
     from hwt.synthesizer.utils import to_rtl_str
     u = AxiPerfTester()
+    u.HISTOGRAM_ITEMS = 4
+    u.LAST_VALUES_ITEMS = 4
+    u.ID_WIDTH = 4
+    u.RW_PATTERN_ITEMS = 4
+    u.DATA_WIDTH = 32
     print(to_rtl_str(u))
 

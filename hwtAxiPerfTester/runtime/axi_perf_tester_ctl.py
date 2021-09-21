@@ -1,8 +1,7 @@
 
 import time
-from typing import List, Tuple
+from typing import List
 
-from hwtAxiPerfTester.address_generator import AddressGenerator
 from hwtAxiPerfTester.runtime.data_containers import AxiPerfTesterTestJob, \
     AxiPerfTesterChannelConfig, AxiPerfTesterTestChannelReport, \
     AxiPerfTesterTestReport

@@ -3,82 +3,22 @@
 # -*- coding: utf-8 -*-
 
 from collections import deque
-from math import ceil
 import threading
 import unittest
 
 from hwt.simulator.simTestCase import SimTestCase
+from hwtAxiPerfTester.address_generator import AddressGenerator
 from hwtAxiPerfTester.axi_perf_tester import AxiPerfTester
-from hwtAxiPerfTester.runtime.axi_perf_tester_ctl import AxiPerfTesterCtl, \
+from hwtAxiPerfTester.runtime.data_containers import \
     AxiPerfTesterTestJob, AxiPerfTesterChannelConfig, AxiPerfTesterStatConfig, \
     AxiPerfTesterTestReport
-from hwtLib.amba.axi_comp.sim.ram import AxiSimRam
-from hwtLib.amba.constants import RESP_OKAY
-from hwtLib.tools.debug_bus_monitor_ctl import words_to_int
-from hwtSimApi.constants import CLK_PERIOD
-from hwtSimApi.triggers import Timer, StopSimumulation
-from pyMathBitPrecise.bit_utils import ValidityError, mask
 from hwtAxiPerfTester.rw_pattern_generator import RWPatternGenerator
 from hwtAxiPerfTester.time_duration_storage import TimeDurationStorage
-from hwtAxiPerfTester.address_generator import AddressGenerator
+from hwtLib.amba.axi_comp.sim.ram import AxiSimRam
+from hwtSimApi.constants import CLK_PERIOD
+from hwtSimApi.triggers import Timer, StopSimumulation
+from tests.axi_perf_tester_ctl_devmem import AxiPerfTesterCtlSim
 
-
-class AxiPerfTesterCtlSim(AxiPerfTesterCtl):
-
-    def __init__(self, tc):
-        u = tc.u
-        AxiPerfTesterCtl.__init__(self, 0,
-                                  u.RW_PATTERN_ITEMS,
-                                  u.HISTOGRAM_ITEMS, u.LAST_VALUES_ITEMS, pooling_interval=0.1
-                                  )
-        self.tc = tc
-
-    def read(self, addr: int, size: int):
-        axi = self.tc.u.cfg
-        word_size = axi.DATA_WIDTH // 8
-        words = []
-        for _ in range(ceil(size / word_size)):
-            assert not self.tc.sim_done
-            ar_req = axi.ar._ag.create_addr_req(addr)
-            axi.ar._ag.data.append(ar_req)
-
-            r_data = axi.r._ag.data
-            while not r_data:
-                assert not self.tc.sim_done
-                self.tc.r_data_available.acquire()
-
-            d = r_data.popleft()[0]
-            try:
-                d = int(d)
-            except ValidityError:
-                d = d.val & d.vld_mask
-
-            words.append(d)
-            addr += word_size
-
-        return words_to_int(words, word_size, size).to_bytes(size, "little")
-
-    def write(self, addr:int, size:int, data:int):
-        axi = self.tc.u.cfg
-        word_size = axi.DATA_WIDTH // 8
-        word_mask = mask(axi.DATA_WIDTH)
-        word_strb = mask(word_size)
-        for _ in range(ceil(size / word_size)):
-            assert not self.tc.sim_done
-            aw_req = axi.ar._ag.create_addr_req(addr)
-            axi.aw._ag.data.append(aw_req)
-            axi.w._ag.data.append((data & word_mask, word_strb))
-
-            b_data = axi.b._ag.data
-            while not b_data:
-                assert not self.tc.sim_done
-                self.tc.b_data_available.acquire()
-
-            d = b_data.popleft()[0]
-            assert int(d) == RESP_OKAY, d
-
-            addr += word_size
-            data >>= axi.DATA_WIDTH
 
 
 def run_AxiPerfTesterCtlSim(tc, job, data):

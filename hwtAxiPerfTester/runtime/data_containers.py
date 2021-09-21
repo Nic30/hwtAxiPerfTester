@@ -35,7 +35,7 @@ class AxiPerfTesterAddrGenConfig():
         self.credit = 1000
         self.addr = 0
         self.addr_step = 64
-        self.addr_mask = 0x1000
+        self.addr_mask = 0x1000 - 1
         self.addr_mode = AddressGenerator.MODE.MODULO
         self.addr_offset = 0x0
         self.trans_len = 0

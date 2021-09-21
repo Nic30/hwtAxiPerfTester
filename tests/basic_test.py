@@ -89,7 +89,7 @@ class AxiPerfTesterTC(SimTestCase):
                     raise StopSimumulation()
 
         mem = self.mem
-        for i in range(0x1000 // 64):
+        for i in range(0x1000 // (u.DATA_WIDTH // 8)):
             mem.data[i] = i
 
         self.procs.extend([time_sync()])
@@ -103,7 +103,7 @@ class AxiPerfTesterTC(SimTestCase):
             ag.credit = 10
             ag.addr = 0
             ag.addr_step = 64
-            ag.addr_mask = 0x1000
+            ag.addr_mask = 0x1000 - 1
             ag.addr_mode = AddressGenerator.MODE.MODULO
             ag.addr_offset = 0x0
             ag.trans_len = 0

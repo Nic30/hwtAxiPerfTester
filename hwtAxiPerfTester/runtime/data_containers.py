@@ -103,6 +103,7 @@ class AxiPerfTesterTestChannelReport(PrimitiveJsonObject):
         self.credit = 0
         self.dispatched_cntr = 0
         self.histogram_counters: List[int] = []
+        self.histogram_keys: List[int] = []
         self.last_values: List[int] = []
         self.min_val = 0
         self.max_val = 0

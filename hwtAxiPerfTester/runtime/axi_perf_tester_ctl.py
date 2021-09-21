@@ -153,12 +153,13 @@ class AxiPerfTesterCtl():
         assert res >= 0
         return res
 
-    def download_channel_report(self, ch_i: int, rep: AxiPerfTesterTestChannelReport):
+    def download_channel_report(self, ch_i: int, histogram_keys: List[int], rep: AxiPerfTesterTestChannelReport):
         read32 = self.read32
         offset = self.channel_config_t_size * ch_i
         rep.credit = read32(offset + self.addr_gen_config_offset)
         rep.dispatched_cntr = read32(offset + self.dispatched_cntr_offset)
 
+        rep.histogram_keys = histogram_keys
         offset += self.stat_data_offset + (self.histogram_items - 1) * 4
         rep.histogram_counters: List[int] = [
             read32(offset + i * 4) for i in range(self.histogram_items)
@@ -203,7 +204,7 @@ class AxiPerfTesterCtl():
         rep = AxiPerfTesterTestReport()
         rep.time = self.get_time()
         for ch_i, ch_rep in enumerate(rep.channel):
-            self.download_channel_report(ch_i, ch_rep)
+            self.download_channel_report(ch_i, job.channel_config[ch_i].stat_config.histogram_keys, ch_rep)
 
         return rep
 

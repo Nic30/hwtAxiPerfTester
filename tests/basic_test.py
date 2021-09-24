@@ -123,7 +123,7 @@ class AxiPerfTesterTC(SimTestCase):
                                       args=(self, job, reports))
         ctl_thread.start()
         # actually takes less time as the simulation is stopped after ctl_thread end
-        self.runSim(12000 * CLK_PERIOD)
+        self.runSim(15000 * CLK_PERIOD)
         # handle the case where something went wrong and ctl thread is still running
         self.sim_done = True
         if self.r_data_available.locked():

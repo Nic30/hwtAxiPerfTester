@@ -6,13 +6,16 @@ from typing import Type, Tuple
 from hwt.code import If
 from hwt.hdl.types.bits import Bits
 from hwt.hdl.types.defs import BIT
+from hwt.hdl.types.hdlType import HdlType
 from hwt.hdl.types.struct import HStruct
 from hwt.interfaces.std import HandshakeSync
 from hwt.interfaces.structIntf import StructIntf
 from hwt.interfaces.utils import addClkRstn, propagateClkRstn
+from hwt.synthesizer.hObjList import HObjList
 from hwt.synthesizer.param import Param
+from hwt.synthesizer.rtlLevel.rtlSignal import RtlSignal
 from hwt.synthesizer.unit import Unit
-from hwtAxiPerfTester.address_generator import AddressGenerator
+from hwtAxiPerfTester.transaction_generator import TransactionGenerator
 from hwtAxiPerfTester.rw_pattern_generator import RWPatternGenerator
 from hwtAxiPerfTester.statistic_collector import StatisticCollector
 from hwtAxiPerfTester.time_duration_storage import TimeDurationStorage
@@ -24,12 +27,21 @@ from hwtLib.amba.constants import BURST_INCR, PROT_DEFAULT, BYTES_IN_TRANS, \
 from hwtLib.handshaked.streamNode import StreamNode
 from hwtLib.types.ctypes import uint32_t, uint16_t
 from pyMathBitPrecise.bit_utils import mask
-from hwt.synthesizer.rtlLevel.rtlSignal import RtlSignal
-from hwt.synthesizer.hObjList import HObjList
-from hwt.hdl.types.hdlType import HdlType
 
 
 class AxiPerfTester(Unit):
+    """
+    This component is a performace tester for AXI3/4 slaves.
+    It can be configured to generate various access patterns and measures througput and latency of operations.
+    :see: :class:`hwtAxiPerfTester.transaction_generator.TransactionGenerator`
+    The output is in format of histogram, last n values and several common properties like min/max etc.
+    :see: :class:`hwtAxiPerfTester.statistic_collector.StatisticCollector`.
+
+
+    .. figure:: ./_static/AxiPerfTester.png
+
+    .. hwt-autodoc::
+    """
 
     def _config(self) -> None:
         # generator/stat collector config
@@ -71,7 +83,7 @@ class AxiPerfTester(Unit):
     def add_channel(self, name:str, axi_addr: Axi4_addr, cfg_io: StructIntf,
                     time: RtlSignal, stats_en: RtlSignal,
                     generator_en: HandshakeSync, ordering_mode: RtlSignal):
-        addr_gen = AddressGenerator()
+        addr_gen = TransactionGenerator()
         trans_store = TimeDurationStorage()
         stats = StatisticCollector()
         stats.COUNTER_WIDTH = self.COUNTER_WIDTH
@@ -219,14 +231,14 @@ class AxiPerfTester(Unit):
             (stat_data_t, "stats"),
             name="channel_config_t"
         )
-        controll_t = HStruct(
+        control_t = HStruct(
             (BIT, "time_en"),
             (BIT, "rw_mode"),
             (BIT, "generator_en"),
             (BIT, "r_ordering_mode"),
             (BIT, "w_ordering_mode"),
             (Bits(32 - 5), "reserved"),
-            name="controll_t"
+            name="control_t"
         )
         serialized_config_t = HStruct(
             (uint16_t, "COUNTER_WIDTH"),
@@ -241,16 +253,16 @@ class AxiPerfTester(Unit):
         )
         ADDR_SPACE = HStruct(
             (uint32_t, "id"),  # "TEST"
-            (uint32_t, "controll"),  # :see: controll_t
+            (uint32_t, "control"),  # :see: control_t
             (uint32_t, "time"),  # global time in this component
             (serialized_config_t, "serialized_config"),
             (channel_config_t, "r"),
             (channel_config_t, "w"),
         )
-        return  ADDR_SPACE, controll_t
+        return  ADDR_SPACE, control_t
 
     def _impl(self) -> None:
-        ADDR_SPACE, controll_t = self.construct_addr_space_type()
+        ADDR_SPACE, control_t = self.construct_addr_space_type()
         # print(ADDR_SPACE)
         cfg = self.build_addr_decoder(ADDR_SPACE)
         cfg.id.din(int.from_bytes("TEST".encode(), "big"))
@@ -286,24 +298,24 @@ class AxiPerfTester(Unit):
         rw_pat.w_pattern(cfg.w.pattern, fit=True)
         rw_pat.mode(cntrl.rw_mode)
 
-        cfg_controll_din = cfg.controll.din._reinterpret_cast(controll_t)
-        cfg_controll_dout = cfg.controll.dout.data._reinterpret_cast(controll_t)
+        cfg_control_din = cfg.control.din._reinterpret_cast(control_t)
+        cfg_control_dout = cfg.control.dout.data._reinterpret_cast(control_t)
         self.add_channel("r", self.axi.ar, cfg.r, time, cntrl.time_en, rw_pat.r_en, cntrl.r_ordering_mode)
         rw_pat.r_credit(cfg.r.addr_gen_config.credit)
         self.add_channel("w", self.axi.aw, cfg.w, time, cntrl.time_en, rw_pat.w_en, cntrl.w_ordering_mode)
         rw_pat.w_credit(cfg.w.addr_gen_config.credit)
 
-        If(cfg.controll.dout.vld,
-           cntrl.time_en(cfg_controll_dout.time_en),
-           cntrl.rw_mode(cfg_controll_dout.rw_mode),
-           cntrl.r_ordering_mode(cfg_controll_dout.r_ordering_mode),
-           cntrl.w_ordering_mode(cfg_controll_dout.w_ordering_mode),
+        If(cfg.control.dout.vld,
+           cntrl.time_en(cfg_control_dout.time_en),
+           cntrl.rw_mode(cfg_control_dout.rw_mode),
+           cntrl.r_ordering_mode(cfg_control_dout.r_ordering_mode),
+           cntrl.w_ordering_mode(cfg_control_dout.w_ordering_mode),
         )
-        rw_pat.en.dout.vld(cfg.controll.dout.vld)
-        rw_pat.en.dout.data(cfg_controll_dout.generator_en)
-        cfg_controll_din(cntrl, exclude=[cfg_controll_din.generator_en, cfg_controll_din.reserved])
-        cfg_controll_din.generator_en(rw_pat.en.din)
-        cfg_controll_din.reserved(0)
+        rw_pat.en.dout.vld(cfg.control.dout.vld)
+        rw_pat.en.dout.data(cfg_control_dout.generator_en)
+        cfg_control_din(cntrl, exclude=[cfg_control_din.generator_en, cfg_control_din.reserved])
+        cfg_control_din.generator_en(rw_pat.en.din)
+        cfg_control_din.reserved(0)
 
         propagateClkRstn(self)
 

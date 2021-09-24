@@ -8,6 +8,7 @@ from hwt.hdl.types.struct import HStruct
 from hwt.interfaces.hsStructIntf import HsStructIntf
 from hwt.interfaces.std import Handshaked, Signal
 from hwt.interfaces.utils import addClkRstn, propagateClkRstn
+from hwt.synthesizer.interfaceLevel.interfaceUtils.utils import walkPhysInterfaces
 from hwt.synthesizer.param import Param
 from hwt.synthesizer.unit import Unit
 from hwtLib.amba.axi4 import Axi4
@@ -17,7 +18,6 @@ from hwtLib.handshaked.ramAsHs import RamAsHs
 from hwtLib.handshaked.reg import HandshakedReg
 from hwtLib.handshaked.streamNode import StreamNode
 from hwtLib.mem.ram import RamSingleClock
-from hwt.synthesizer.interfaceLevel.interfaceUtils.utils import walkPhysInterfaces
 
 
 class TimeDurationStorage(Unit):

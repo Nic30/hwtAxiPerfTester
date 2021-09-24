@@ -6,7 +6,7 @@ import threading
 import unittest
 
 from hwt.simulator.simTestCase import SimTestCase
-from hwtAxiPerfTester.address_generator import AddressGenerator
+from hwtAxiPerfTester.transaction_generator import TransactionGenerator
 from hwtAxiPerfTester.axi_perf_tester import AxiPerfTester
 from hwtAxiPerfTester.runtime.data_containers import \
     AxiPerfTesterTestJob, AxiPerfTesterChannelConfig, AxiPerfTesterStatConfig, \
@@ -80,7 +80,7 @@ class AxiPerfTesterTC(SimTestCase):
         u: AxiPerfTester = self.u
         tc = self
         self.setUpQueues()
-        #axi_randomize_per_channel(self, u.cfg)
+        # axi_randomize_per_channel(self, u.cfg)
         axi_randomize_per_channel(self, u.axi)
 
         def time_sync():
@@ -107,12 +107,12 @@ class AxiPerfTesterTC(SimTestCase):
             ag.addr = 0
             ag.addr_step = 64
             ag.addr_mask = 0x1000 - 1
-            ag.addr_mode = AddressGenerator.MODE.MODULO
+            ag.addr_mode = TransactionGenerator.MODE.MODULO
             ag.addr_offset = 0x0
             ag.trans_len = 0
             ag.trans_len_step = 0
             ag.trans_len_mask = 1
-            ag.trans_len_mode = AddressGenerator.MODE.MODULO
+            ag.trans_len_mode = TransactionGenerator.MODE.MODULO
 
             st = ch.stat_config
             st: AxiPerfTesterStatConfig
@@ -134,8 +134,8 @@ class AxiPerfTesterTC(SimTestCase):
         rep: AxiPerfTesterTestReport = reports[0]
         self.assertGreater(rep.time, 10)
 
-        #import json
-        #with open("example_data.json", "w") as f:
+        # import json
+        # with open("example_data.json", "w") as f:
         #    json.dump(rep.to_json(), f, indent=2, separators=(',', ': '))
 
         for ch_i, ch in enumerate(rep.channel):

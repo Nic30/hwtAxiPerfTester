@@ -13,11 +13,17 @@ from pyMathBitPrecise.bit_utils import mask
 
 class AxiPerfTesterCtl():
     """
+    A base class which contains an application logic of a driver of AxiPerfTester
+    * needs inplementation of read/write method in order to work
+
+
+    The component address space looks like:
+
     .. code-block:: text
 
         struct {
             <Bits, 32bits, unsigned> id
-            <Bits, 32bits, unsigned> controll
+            <Bits, 32bits, unsigned> control
             <Bits, 32bits, unsigned> time
             struct serialized_config_t {
                 <Bits, 16bits, unsigned> COUNTER_WIDTH
@@ -59,7 +65,7 @@ class AxiPerfTesterCtl():
                 // identiacal as "r"
             } w
         }
-        struct controll_t {
+        struct control_t {
             <Bits, 1bit> time_en
             <Bits, 1bit> rw_mode
             <Bits, 1bit> generator_en
@@ -76,6 +82,9 @@ class AxiPerfTesterCtl():
         self.config_loaded = False
 
     def _load_config(self):
+        """
+        Query the hardware for configuration of the tester and store this information for later use.
+        """
         config = self.read(self.addr + 3 * 4, 4 * 2)
         # <Bits, 16bits, unsigned> COUNTER_WIDTH
         # <Bits, 16bits, unsigned> RW_PATTERN_ITEMS
@@ -93,13 +102,17 @@ class AxiPerfTesterCtl():
         self.stat_data_offset = self.addr_gen_config_offset + self.addr_gen_config_t_size
         self.stat_data_size = (self.histogram_items * 2 - 1 + self.last_values_items + 5) * 4
         self.channel_config_t_size = rw_pattern_items * 4 + 4 + self.addr_gen_config_t_size + self.stat_data_size
+        self.config_loaded = True
 
-    def write_controll(self, time_en:int,
+    def write_control(self, time_en:int,
                        rw_mode: RWPatternGenerator.MODE,
                        generator_en: int,
                        r_ordering_mode:TimeDurationStorage.MODE,
                        w_ordering_mode:TimeDurationStorage.MODE,
                        reset_time:bool):
+        """
+        Write control word in control register.
+        """
         assert time_en in (0, 1), time_en
         assert rw_mode in (0, 1), rw_mode
         assert generator_en in (0, 1), generator_en
@@ -116,9 +129,15 @@ class AxiPerfTesterCtl():
             self.write32(2 * 4, 0)
 
     def get_time(self) -> int:
+        """
+        Get time from the component
+        """
         return self.read32(2 * 4)
 
     def apply_config(self, config: AxiPerfTesterTestJob):
+        """
+        Upload config to tester.
+        """
         write32 = self.write32
         # copy rw pattern
         for ch_i, ch in enumerate(config.channel_config):
@@ -171,9 +190,15 @@ class AxiPerfTesterCtl():
                 write32(offset + self.stat_data_offset + (self.histogram_items - 1 + i) * 4, v)
 
     def is_generator_running(self) -> bool:
+        """
+        Retrun True if transaction generator is still running.
+        """
         return (self.read32(4) >> 2) & 0b1
 
     def get_pending_trans_cnt(self, ch_i: int):
+        """
+        Get number of transactions which are actually executed and waiting to be finished.
+        """
         offset = self.channel_config_t_size * ch_i
         dispatched_cntr = self.read32(offset + self.dispatched_cntr_offset)
         input_cnt = self.read32(offset + self.stat_data_offset + (self.histogram_items * 2 - 1 + self.last_values_items + 3) * 4)
@@ -183,6 +208,9 @@ class AxiPerfTesterCtl():
         return res
 
     def download_channel_report(self, ch_i: int, histogram_keys: List[int], rep: AxiPerfTesterTestChannelReport):
+        """
+        Download all counters histograms and other report registers for specific channel.
+        """
         read32 = self.read32
         offset = self.channel_config_t_size * ch_i
         rep.credit = read32(offset + self.addr_gen_config_offset)
@@ -206,13 +234,16 @@ class AxiPerfTesterCtl():
         ]
 
     def exec_test(self, job: AxiPerfTesterTestJob) -> AxiPerfTesterTestReport:
+        """
+        Run test/benchmark according to job specification.
+        """
         if not self.config_loaded:
             self._load_config()
 
         _id = self.read32(0)
         _id_ref = int.from_bytes("TEST".encode(), "big")
         assert _id == _id_ref, (f"got {_id:x}, expected {_id_ref:x}")
-        self.write_controll(
+        self.write_control(
             0, job.rw_mode, 0,
             job.channel_config[0].addr_gen.ordering_mode,
             job.channel_config[1].addr_gen.ordering_mode, True)
@@ -220,7 +251,7 @@ class AxiPerfTesterCtl():
         self.write32(2 * 4, 0)
 
         self.apply_config(job)
-        self.write_controll(
+        self.write_control(
             1, job.rw_mode, 1,
             job.channel_config[0].addr_gen.ordering_mode,
             job.channel_config[1].addr_gen.ordering_mode, False)
@@ -229,7 +260,7 @@ class AxiPerfTesterCtl():
                 self.get_pending_trans_cnt(0) > 0 or\
                 self.get_pending_trans_cnt(1) > 0:
             time.sleep(self.pooling_interval)
-        self.write_controll(
+        self.write_control(
             0, job.rw_mode, 0,
             job.channel_config[0].addr_gen.ordering_mode,
             job.channel_config[1].addr_gen.ordering_mode, False)

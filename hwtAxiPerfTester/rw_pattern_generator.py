@@ -17,7 +17,16 @@ from hwtLib.mem.ram import RamSingleClock
 
 
 class RWPatternGenerator(Unit):
+    """
+    This component is based on several RAMs which can be read synchronusly or independendently for each channel.
+    Each word in ram corresponds to action for this channel. By populating of this RAM any R/W pattern of constrained period
+    can be generated.
 
+    .. figure:: ./_static/RWPatternGenerator.png
+
+
+    .. hwt-autodoc::
+    """
     class MODE:
         SYNC = 0
         INDEPENDENT = 1

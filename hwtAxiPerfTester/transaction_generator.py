@@ -4,6 +4,7 @@
 from typing import Tuple, Union, Dict
 
 from hwt.code import If
+from hwt.hdl.constants import READ, WRITE
 from hwt.hdl.types.bits import Bits
 from hwt.hdl.types.defs import BIT
 from hwt.hdl.types.hdlType import HdlType
@@ -21,10 +22,18 @@ from hwtLib.amba.axi4 import Axi4
 from hwtLib.handshaked.streamNode import StreamNode
 from hwtLib.logic.crcComb import CrcComb
 from hwtLib.logic.crcPoly import CRC_8, CRC_32
-from hwt.hdl.constants import READ, WRITE
 
 
-class AddressGenerator(Unit):
+class TransactionGenerator(Unit):
+    """
+    A generator of requests for transactions.
+    Allows for modulo or random steps in address and transaction length.
+    It supports in-order and out-of-order mode.
+
+    .. figure:: ./_static/TransactionGenerator.png
+
+    .. hwt-autodoc::
+    """
 
     class MODE:
         MODULO = 0
@@ -138,5 +147,5 @@ class AddressGenerator(Unit):
 
 if __name__ == "__main__":
     from hwt.synthesizer.utils import to_rtl_str
-    u = AddressGenerator()
+    u = TransactionGenerator()
     print(to_rtl_str(u))

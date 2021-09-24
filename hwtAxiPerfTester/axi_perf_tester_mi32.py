@@ -5,9 +5,9 @@ from typing import Tuple, Type
 
 from hwt.hdl.types.hdlType import HdlType
 from hwtAxiPerfTester.axi_perf_tester import AxiPerfTester
+from hwtLib.cesnet.mi32.builder import Mi32Builder
 from hwtLib.cesnet.mi32.endpoint import Mi32Endpoint
 from hwtLib.cesnet.mi32.intf import Mi32
-from hwtLib.cesnet.mi32.builder import Mi32Builder
 
 
 class AxiPerfTesterMi32(AxiPerfTester):

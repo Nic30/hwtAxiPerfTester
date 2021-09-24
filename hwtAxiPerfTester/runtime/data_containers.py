@@ -1,6 +1,6 @@
 from typing import Tuple, List
 
-from hwtAxiPerfTester.address_generator import AddressGenerator
+from hwtAxiPerfTester.transaction_generator import TransactionGenerator
 from hwtAxiPerfTester.rw_pattern_generator import RWPatternGenerator
 from hwtAxiPerfTester.time_duration_storage import TimeDurationStorage
 
@@ -36,12 +36,12 @@ class AxiPerfTesterAddrGenConfig():
         self.addr = 0
         self.addr_step = 64
         self.addr_mask = 0x1000 - 1
-        self.addr_mode = AddressGenerator.MODE.MODULO
+        self.addr_mode = TransactionGenerator.MODE.MODULO
         self.addr_offset = 0x0
         self.trans_len = 0
         self.trans_len_step = 0
         self.trans_len_mask = 1
-        self.trans_len_mode = AddressGenerator.MODE.MODULO
+        self.trans_len_mode = TransactionGenerator.MODE.MODULO
 
 
 class AxiPerfTesterChannelConfig():

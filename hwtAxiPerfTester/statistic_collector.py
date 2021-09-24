@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from hwt.code import If
+from hwt.code_utils import rename_signal
 from hwt.hdl.types.bits import Bits
 from hwt.interfaces.std import Signal, BramPort_withoutClk, \
     Handshaked, RegCntrl
@@ -12,13 +13,20 @@ from hwt.synthesizer.hObjList import HObjList
 from hwt.synthesizer.param import Param
 from hwt.synthesizer.unit import Unit
 from hwtAxiPerfTester.histogram import HistogramDynamic
-from hwtLib.mem.ram import RamSingleClock
 from hwtLib.handshaked.builder import HsBuilder
-from hwt.code_utils import rename_signal
+from hwtLib.mem.ram import RamSingleClock
 
 
 @serializeParamsUniq
 class StatisticCollector(Unit):
+    """
+    This component takes a transaction time as input.
+    It stores a histogram, last n values and several other values (min_val, max_val, sum_val, input_cnt, last_time)
+
+    .. figure:: ./_static/StatisticCollector.png
+
+    .. hwt-autodoc::
+    """
 
     def _config(self) -> None:
         self.TRANS_ID_WIDTH:int = Param(6)

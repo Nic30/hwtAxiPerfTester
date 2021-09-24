@@ -1,4 +1,5 @@
 
+import struct
 import time
 from typing import List
 
@@ -18,8 +19,18 @@ class AxiPerfTesterCtl():
             <Bits, 32bits, unsigned> id
             <Bits, 32bits, unsigned> controll
             <Bits, 32bits, unsigned> time
+            struct serialized_config_t {
+                <Bits, 16bits, unsigned> COUNTER_WIDTH
+                <Bits, 16bits, unsigned> RW_PATTERN_ITEMS
+                <Bits, 16bits, unsigned> HISTOGRAM_ITEMS
+                <Bits, 16bits, unsigned> LAST_VALUES_ITEMS
+                <Bits, 16bits, unsigned> ID_WIDTH
+                <Bits, 16bits, unsigned> ADDR_WIDTH
+                <Bits, 16bits, unsigned> DATA_WIDTH
+                //<Bits, 16bits, unsigned> empty space
+            } serialized_config
             struct channel_config_t {
-                <Bits, 32bits, unsigned>[1024] pattern
+                <Bits, 32bits, unsigned>[4] pattern
                 <Bits, 32bits, unsigned> dispatched_cntr
                 struct addr_gen_config_t {
                     <Bits, 32bits, unsigned> credit
@@ -34,9 +45,9 @@ class AxiPerfTesterCtl():
                     <Bits, 32bits, unsigned> trans_len_mode
                 } addr_gen_config
                 struct stat_data_t {
-                    <Bits, 32bits, unsigned>[31] histogram_keys
-                    <Bits, 32bits, unsigned>[32] histogram_counters
-                    <Bits, 32bits, unsigned>[4096] last_values
+                    <Bits, 32bits, unsigned>[3] histogram_keys
+                    <Bits, 32bits, unsigned>[4] histogram_counters
+                    <Bits, 32bits, unsigned>[4] last_values
                     <Bits, 32bits, unsigned> min_val
                     <Bits, 32bits, unsigned> max_val
                     <Bits, 32bits, unsigned> sum_val
@@ -44,20 +55,38 @@ class AxiPerfTesterCtl():
                     <Bits, 32bits, unsigned> last_time
                 } stats
             } r
-            struct channel_config_t {...
+            struct channel_config_t {
+                // identiacal as "r"
             } w
+        }
+        struct controll_t {
+            <Bits, 1bit> time_en
+            <Bits, 1bit> rw_mode
+            <Bits, 1bit> generator_en
+            <Bits, 1bit> r_ordering_mode
+            <Bits, 1bit> w_ordering_mode
+            <Bits, 27bits> reserved
         }
 """
 
-    def __init__(self, addr: int, rw_pattern_items: int,
-                 histogram_items:int, last_values_items: int, pooling_interval=0.1):
+    def __init__(self, addr: int, pooling_interval=0.1):
         # constant intitialization
         self.addr = addr
         self.pooling_interval = pooling_interval
+        self.config_loaded = False
+
+    def _load_config(self):
+        config = self.read(self.addr + 3 * 4, 4 * 2)
+        # <Bits, 16bits, unsigned> COUNTER_WIDTH
+        # <Bits, 16bits, unsigned> RW_PATTERN_ITEMS
+        # <Bits, 16bits, unsigned> HISTOGRAM_ITEMS
+        # <Bits, 16bits, unsigned> LAST_VALUES_ITEMS
+
+        _, rw_pattern_items, histogram_items, last_values_items = struct.unpack('<HHHH', config)
         self.rw_pattern_items = rw_pattern_items
         self.histogram_items = histogram_items
         self.last_values_items = last_values_items
-        self.channels_offset = 3 * 4
+        self.channels_offset = 3 * 4 + 8 * 2
         self.dispatched_cntr_offset = self.channels_offset + rw_pattern_items * 4
         self.addr_gen_config_t_size = 10 * 4
         self.addr_gen_config_offset = self.dispatched_cntr_offset + 4
@@ -177,6 +206,9 @@ class AxiPerfTesterCtl():
         ]
 
     def exec_test(self, job: AxiPerfTesterTestJob) -> AxiPerfTesterTestReport:
+        if not self.config_loaded:
+            self._load_config()
+
         _id = self.read32(0)
         _id_ref = int.from_bytes("TEST".encode(), "big")
         assert _id == _id_ref, (f"got {_id:x}, expected {_id_ref:x}")

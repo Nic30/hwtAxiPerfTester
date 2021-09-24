@@ -9,11 +9,7 @@ from pyMathBitPrecise.bit_utils import ValidityError, mask
 class AxiPerfTesterCtlSim(AxiPerfTesterCtl):
 
     def __init__(self, tc):
-        u = tc.u
-        AxiPerfTesterCtl.__init__(self, 0,
-                                  u.RW_PATTERN_ITEMS,
-                                  u.HISTOGRAM_ITEMS, u.LAST_VALUES_ITEMS, pooling_interval=0.1
-                                  )
+        AxiPerfTesterCtl.__init__(self, 0, pooling_interval=0.1)
         self.tc = tc
 
     def read(self, addr: int, size: int):

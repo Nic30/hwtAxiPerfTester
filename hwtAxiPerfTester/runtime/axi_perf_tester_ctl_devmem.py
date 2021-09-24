@@ -9,9 +9,8 @@ from pyMathBitPrecise.bit_utils import mask
 
 class AxiPerfTesterCtlDevmem(AxiPerfTesterCtl):
 
-    def __init__(self, addr: int, rw_pattern_items: int,
-                 histogram_items:int, last_values_items: int, pooling_interval=0.1):
-        AxiPerfTesterCtl.__init__(self, addr, rw_pattern_items, histogram_items, last_values_items, pooling_interval=pooling_interval)
+    def __init__(self, addr: int, pooling_interval=0.1):
+        AxiPerfTesterCtl.__init__(self, addr, pooling_interval=pooling_interval)
         self.devmem = "devmem"
 
     def read(self, addr: int, size: int) -> bytes:

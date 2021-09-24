@@ -22,7 +22,7 @@ from hwtLib.amba.axiLite_comp.endpoint import AxiLiteEndpoint
 from hwtLib.amba.constants import BURST_INCR, PROT_DEFAULT, BYTES_IN_TRANS, \
     LOCK_DEFAULT, CACHE_DEFAULT, QOS_DEFAULT
 from hwtLib.handshaked.streamNode import StreamNode
-from hwtLib.types.ctypes import uint32_t
+from hwtLib.types.ctypes import uint32_t, uint16_t
 from pyMathBitPrecise.bit_utils import mask
 from hwt.synthesizer.rtlLevel.rtlSignal import RtlSignal
 from hwt.synthesizer.hObjList import HObjList
@@ -228,10 +228,22 @@ class AxiPerfTester(Unit):
             (Bits(32 - 5), "reserved"),
             name="controll_t"
         )
+        serialized_config_t = HStruct(
+            (uint16_t, "COUNTER_WIDTH"),
+            (uint16_t, "RW_PATTERN_ITEMS"),
+            (uint16_t, "HISTOGRAM_ITEMS"),
+            (uint16_t, "LAST_VALUES_ITEMS"),
+            (uint16_t, "ID_WIDTH"),
+            (uint16_t, "ADDR_WIDTH"),
+            (uint16_t, "DATA_WIDTH"),
+            (uint16_t, None),
+            name="serialized_config_t"
+        )
         ADDR_SPACE = HStruct(
             (uint32_t, "id"),  # "TEST"
             (uint32_t, "controll"),  # :see: controll_t
             (uint32_t, "time"),  # global time in this component
+            (serialized_config_t, "serialized_config"),
             (channel_config_t, "r"),
             (channel_config_t, "w"),
         )
@@ -242,6 +254,9 @@ class AxiPerfTester(Unit):
         # print(ADDR_SPACE)
         cfg = self.build_addr_decoder(ADDR_SPACE)
         cfg.id.din(int.from_bytes("TEST".encode(), "big"))
+        for sc in cfg.serialized_config._interfaces:
+            sc.din(getattr(self, sc._name))
+
         cntrl = self._reg("cntrl", HStruct(
             (BIT, "time_en"),
             (BIT, "rw_mode"),

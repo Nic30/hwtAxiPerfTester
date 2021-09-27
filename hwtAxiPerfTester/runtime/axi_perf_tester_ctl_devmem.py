@@ -36,7 +36,6 @@ class AxiPerfTesterCtlDevmem(AxiPerfTesterCtl):
             raise NotImplementedError()
 
         for _ in range(ceil(size / word_size)):
-            assert not self.tc.sim_done
             d = data & word_mask
             subprocess.check_output([self.devmem, f"0x{addr:x}", 'w', f"0x{d:x}"])
             axi.w._ag.data.append((data & word_mask, word_strb))

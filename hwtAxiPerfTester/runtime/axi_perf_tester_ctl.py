@@ -85,7 +85,7 @@ class AxiPerfTesterCtl():
         """
         Query the hardware for configuration of the tester and store this information for later use.
         """
-        config = self.read(self.addr + 3 * 4, 4 * 2)
+        config = self.read(3 * 4, 4 * 2)
         # <Bits, 16bits, unsigned> COUNTER_WIDTH
         # <Bits, 16bits, unsigned> RW_PATTERN_ITEMS
         # <Bits, 16bits, unsigned> HISTOGRAM_ITEMS

@@ -3,14 +3,14 @@
 
 from typing import Tuple, Union, Dict
 
-from hwt.code import If
+from hwt.code import If, Switch
 from hwt.hdl.constants import READ, WRITE
 from hwt.hdl.types.bits import Bits
 from hwt.hdl.types.defs import BIT
 from hwt.hdl.types.hdlType import HdlType
 from hwt.hdl.types.struct import HStruct, HStructField
 from hwt.interfaces.hsStructIntf import HsStructIntf
-from hwt.interfaces.std import HandshakeSync
+from hwt.interfaces.std import HandshakeSync, Handshaked
 from hwt.interfaces.structIntf import StructIntf
 from hwt.interfaces.utils import addClkRstn, propagateClkRstn
 from hwt.synthesizer.interface import Interface
@@ -38,6 +38,7 @@ class TransactionGenerator(Unit):
     class MODE:
         MODULO = 0
         CRC = 1
+        EXACT = 2
 
     def _config(self) -> None:
         self.ADDR_WIDTH = Param(32)
@@ -46,7 +47,9 @@ class TransactionGenerator(Unit):
     def _declr(self) -> None:
         addClkRstn(self)
 
-        self.en = HandshakeSync()
+        self.en = Handshaked()
+        self.en.DATA_WIDTH = self.ADDR_WIDTH
+
         self.req_out: HsStructIntf = HsStructIntf()._m()
         self.req_out.T = HStruct(
             (Bits(self.ADDR_WIDTH), "addr"),
@@ -59,13 +62,13 @@ class TransactionGenerator(Unit):
             (addr_t, "addr"),
             (addr_t, "addr_step"),
             (addr_t, "addr_mask"),
-            (BIT, "addr_mode"),
+            (Bits(2), "addr_mode"),
             (addr_t, "addr_offset"),
 
             (len_t, "trans_len"),
             (len_t, "trans_len_step"),
             (len_t, "trans_len_mask"),
-            (BIT, "trans_len_mode"),
+            (Bits(2), "trans_len_mode"),
         )
         self.STRUCT_TEMPLATE = self.ADDR_SPACE
         self.addr_space_io = StructIntf(
@@ -100,7 +103,7 @@ class TransactionGenerator(Unit):
         addr = self._reg("addr", addr_t)
         addr_step = self._reg("addr_step", addr_t)
         addr_mask = self._reg("addr_mask", addr_t)
-        addr_mode = self._reg("addr_mode")
+        addr_mode = self._reg("addr_mode", Bits(2))
         addr_offset = self._reg("addr_offset", addr_t)
 
         addr_crc32 = CrcComb()
@@ -113,7 +116,7 @@ class TransactionGenerator(Unit):
         trans_len = self._reg("trans_len", len_t)
         trans_len_step = self._reg("trans_len_step", len_t)
         trans_len_mask = self._reg("trans_len_mask", len_t)
-        trans_len_mode = self._reg("trans_len_mode")
+        trans_len_mode = self._reg("trans_len_mode", Bits(2))
         trans_len_crc8 = CrcComb()
         trans_len_crc8.DATA_WIDTH = self.LEN_WIDTH
         trans_len_crc8.setConfig(CRC_8)
@@ -126,15 +129,24 @@ class TransactionGenerator(Unit):
 
         self.propagate_addr_space(locals(), READ)
         If(sync.ack(),
-            If(addr_mode._eq(self.MODE.MODULO),
+            Switch(addr_mode)\
+            .Case(self.MODE.MODULO,
                addr(addr + addr_step),
-            ).Elif(addr_mode._eq(self.MODE.CRC),
+            ).Case(self.MODE.CRC,
                addr(addr_crc32.dataOut),
+            ).Case(self.MODE.EXACT,
+               addr(self.en.data),
+            ).Default(
+               addr(None)
             ),
-            If(trans_len_mode._eq(self.MODE.MODULO),
+            Switch(trans_len_mode)\
+            .Case(self.MODE.MODULO,
                trans_len((trans_len + trans_len_step)),
-            ).Elif(trans_len_mode._eq(self.MODE.CRC),
+            ).Case(self.MODE.CRC,
                trans_len(trans_len_crc8.dataOut),
+            ).Case(self.MODE.EXACT,
+            ).Default(
+               trans_len(None)
             ),
         ).Else(
             *self.propagate_addr_space(locals(), WRITE)

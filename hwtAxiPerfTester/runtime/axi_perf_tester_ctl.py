@@ -96,12 +96,12 @@ class AxiPerfTesterCtl():
         self.histogram_items = histogram_items
         self.last_values_items = last_values_items
         self.channels_offset = 3 * 4 + 8 * 2
-        self.dispatched_cntr_offset = self.channels_offset + rw_pattern_items * 4
+        self.dispatched_cntr_offset = self.channels_offset + rw_pattern_items * 8
         self.addr_gen_config_t_size = 10 * 4
         self.addr_gen_config_offset = self.dispatched_cntr_offset + 4
         self.stat_data_offset = self.addr_gen_config_offset + self.addr_gen_config_t_size
         self.stat_data_size = (self.histogram_items * 2 - 1 + self.last_values_items + 5) * 4
-        self.channel_config_t_size = rw_pattern_items * 4 + 4 + self.addr_gen_config_t_size + self.stat_data_size
+        self.channel_config_t_size = rw_pattern_items * 8 + 4 + self.addr_gen_config_t_size + self.stat_data_size
         self.config_loaded = True
 
     def write_control(self, time_en:int,
@@ -144,8 +144,10 @@ class AxiPerfTesterCtl():
             ch: AxiPerfTesterChannelConfig
             offset = self.channel_config_t_size * ch_i
             assert len(ch.pattern) == self.rw_pattern_items
-            for i, en in enumerate(ch.pattern):
-                write32(offset + self.channels_offset + i * 4, en)
+            for i, (addr, delay, en) in enumerate(ch.pattern):
+                o = offset + self.channels_offset + i * 8
+                write32(o, addr)
+                write32(o + 4, delay | (en << 16))
 
             # reset dispatched_cntr
             write32(offset + self.dispatched_cntr_offset, 0)

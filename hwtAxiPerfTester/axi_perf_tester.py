@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from typing import Type, Tuple
+from typing import Type, Tuple, Optional
 
 from hwt.code import If
 from hwt.hdl.types.bits import Bits
@@ -25,7 +25,7 @@ from hwtLib.amba.axiLite_comp.endpoint import AxiLiteEndpoint
 from hwtLib.amba.constants import BURST_INCR, PROT_DEFAULT, BYTES_IN_TRANS, \
     LOCK_DEFAULT, CACHE_DEFAULT, QOS_DEFAULT
 from hwtLib.handshaked.streamNode import StreamNode
-from hwtLib.types.ctypes import uint32_t, uint16_t
+from hwtLib.types.ctypes import uint32_t, uint16_t, uint64_t
 from pyMathBitPrecise.bit_utils import mask
 
 
@@ -61,6 +61,7 @@ class AxiPerfTester(Unit):
         self.ID_WIDTH:int = Param(6)
         self.ADDR_WIDTH:int = Param(32)
         self.DATA_WIDTH:int = Param(512)
+        self.MAX_BLOCK_DATA_WIDTH: Optional[int] = Param(None)
 
     def _declr(self) -> None:
         addClkRstn(self)
@@ -225,7 +226,7 @@ class AxiPerfTester(Unit):
             name="stat_data_t",
         )
         channel_config_t = HStruct(
-            (uint32_t[self.RW_PATTERN_ITEMS], "pattern"),
+            (uint32_t[self.RW_PATTERN_ITEMS * 2], "pattern"),
             (uint32_t, "dispatched_cntr"),
             (addr_gen_config_t, "addr_gen_config"),
             (stat_data_t, "stats"),
@@ -291,6 +292,8 @@ class AxiPerfTester(Unit):
         cfg.time.din(time)
 
         rw_pat = RWPatternGenerator()
+        rw_pat.MAX_BLOCK_DATA_WIDTH = self.MAX_BLOCK_DATA_WIDTH
+        rw_pat.ADDR_WIDTH = self.ADDR_WIDTH
         rw_pat.ITEMS = self.RW_PATTERN_ITEMS
         rw_pat.COUNTER_WIDTH = self.COUNTER_WIDTH
         self.rw_pattern_gen = rw_pat

@@ -27,7 +27,6 @@ class AxiPerfTesterAddrGenConfig():
     :ivar addr_mode: :see: :class:`AddressGenerator.MODE`
     :ivar addr_offset: final offset of address
     :ivar trans_len: starting length of transaction (0 = 1 word, 1=2words, ...)
-
     """
 
     def __init__(self):
@@ -69,6 +68,14 @@ class AxiPerfTesterTestJob():
 
 
 class AxiPerfTesterTestReport():
+    """
+    A container of results form a test/benchmark job
+
+    :ivar time: The component time when all subtasks were detected to be complete
+        (use time from the channel directly for better time precission).
+    :note: Start time is set to be 0 when test is executed
+    :note: End time is stored in data for specific channel
+    """
 
     def __init__(self):
         self.time = 0

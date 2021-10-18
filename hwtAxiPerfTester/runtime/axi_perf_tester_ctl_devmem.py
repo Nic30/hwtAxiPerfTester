@@ -12,10 +12,11 @@ class AxiPerfTesterCtlDevmem(AxiPerfTesterCtl):
     def __init__(self, addr: int, pooling_interval=0.1):
         AxiPerfTesterCtl.__init__(self, addr, pooling_interval=pooling_interval)
         self.devmem = "devmem"
+        self.word_size = 0x4
 
     def read(self, addr: int, size: int) -> bytes:
         addr += self.addr
-        word_size = 0x4
+        word_size = self.word_size
         words = []
         for _ in range(ceil(size / word_size)):
             s = subprocess.check_output([self.devmem, f"0x{addr:x}"])
@@ -28,17 +29,14 @@ class AxiPerfTesterCtlDevmem(AxiPerfTesterCtl):
 
     def write(self, addr:int, size:int, data:int):
         addr += self.addr
-        axi = self.tc.u.cfg
-        word_size = axi.DATA_WIDTH // 8
-        word_mask = mask(axi.DATA_WIDTH)
-        word_strb = mask(word_size)
+        word_size = self.word_size
+        word_mask = mask(word_size * 8)
         if size % word_size != 0:
             raise NotImplementedError()
 
         for _ in range(ceil(size / word_size)):
             d = data & word_mask
             subprocess.check_output([self.devmem, f"0x{addr:x}", 'w', f"0x{d:x}"])
-            axi.w._ag.data.append((data & word_mask, word_strb))
 
             addr += word_size
-            data >>= axi.DATA_WIDTH
+            data >>= word_size * 8

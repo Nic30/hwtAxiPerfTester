@@ -19,7 +19,7 @@ The tests are cosimulation, you can modify config in tests and see what it does.
 ```
 pip3 install --upgrade --no-cache\
     -r https://raw.githubusercontent.com/Nic30/hwtAxiPerfTester/master/doc/requirements.txt \
-    git+git://github.com/Nic30/hwtAxiPerfTester#egg=hwtAxiPerfTester
+    git+https://github.com/Nic30/hwtAxiPerfTester#egg=hwtAxiPerfTester
 ```
 
 Once you have a design you can start script the tests scenarios.
